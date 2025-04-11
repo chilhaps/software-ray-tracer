@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-scene_fn = "scene_1.json"
+scene_fn = "scene_3.json"
 res = 256
 
 #### Scene Loader
@@ -113,7 +113,7 @@ def cast_ray(r_o, r_d, obj_list):
 	return t_min, closest_object
 
 # Define function to calculate Phong lighting
-def phong(r_o, r_d, t, obj, light):
+def phong(r_o, r_d, t, obj, obj_list, light):
 	# Calculate intersection point in world space
 	p = r_o + r_d * t
 
@@ -157,6 +157,13 @@ def phong(r_o, r_d, t, obj, light):
 	c_spec = (s * m_spec) * np.clip(np.dot(v_hat, r_hat), 0, None)**m_gls
 	c_amb = s_amb * m_amb
 
+	offset = [0.001, 0.001, 0.001]
+	shade_t, shade_obj = cast_ray(p + offset, light['DirectionToLight'], obj_list)
+
+	if shade_t != -1:
+		k_d = 0
+		k_s = 0
+
 	# Calculate final color at point
 	c = k_d * c_diff + k_s * c_spec + k_a * c_amb
 
@@ -193,7 +200,7 @@ with tqdm(total=len(ray_directions) * len(ray_directions[0])) as pbar:
 
 			# If t-value is not -1, calculate pixel color using Phong model. Otherwise, set pixel color to background color 
 			if t != -1:
-				image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, light)
+				image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light)
 			else:
 				image[i][j] = light['BackgroundColor']
 			
