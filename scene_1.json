@@ -1,0 +1,42 @@
+{
+  "Camera": 
+  {
+    "LookAt": [0.0,0.0,0.0],
+    "LookFrom": [0.0,0.0,1.0],
+    "Up": [0.0,1.0,0.0],
+    "FieldOfView": 90
+  },
+
+  "Light":
+    {"DirectionToLight": [0.0, 1.0, 0.0],
+      "LightColor": [1.0, 1.0, 1.0],
+      "AmbientLight": [0.0, 0.0, 0.0],
+      "BackgroundColor": [0.2, 0.2, 0.2]
+    }
+  ,
+
+  "Spheres":
+  [
+    {"Center": [0.0, 0.0, 0.0],
+      "Radius": 0.4,
+      "Kd": 0.7,
+      "Ks": 0.2,
+      "Ka": 0.1,
+      "Mdiff": [1.0, 0.0, 1.0],
+      "Mspec": [1.0, 1.0, 1.0],
+      "Mgls": 16.0,
+      "Refl": 0.0
+    }
+  ],
+
+  "Triangles":
+  [
+
+  ],
+
+  "Planes":
+  [
+
+  ]
+
+}
