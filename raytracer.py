@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 scene_fn = "scene_5.json"
-res = 256
+res = 1080
 
 #### Scene Loader
 def loadScene(scene_fn):
@@ -119,7 +119,10 @@ def calc_refl(normal, vector):
 	return r, r_hat
 
 # Define function to calculate Phong lighting
-def phong(r_o, r_d, t, obj, obj_list, light):
+def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
+	if current_bounce == max_bounces: return 0
+	if t == -1: return light['BackgroundColor']
+
 	# Calculate intersection point in world space
 	p = r_o + r_d * t
 
@@ -173,15 +176,10 @@ def phong(r_o, r_d, t, obj, obj_list, light):
 	refl_v, refl_v_hat = calc_refl(n, -r_d)
 	refl_t, refl_obj = cast_ray(p + offset, refl_v_hat, obj_list)
 
-	if refl_t != -1:
-		c_refl = refl_obj.getDiffuse()
-	else:
-		c_refl = light['BackgroundColor']
+	current_bounce += 1
 
 	# Calculate final color at point
-	c = k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * c_refl
-
-	return c
+	return k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * phong(p + offset, refl_v_hat, refl_t, refl_obj, obj_list, light, max_bounces, current_bounce)
 
 ### Ray Tracer
 camera, light, objects = loadScene(scene_fn)
@@ -212,11 +210,8 @@ with tqdm(total=len(ray_directions) * len(ray_directions[0])) as pbar:
 			# Cast ray for each ray direction
 			t, obj = cast_ray(ray_origin, ray_directions[i][j], objects)
 
-			# If t-value is not -1, calculate pixel color using Phong model. Otherwise, set pixel color to background color 
-			if t != -1:
-				image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light)
-			else:
-				image[i][j] = light['BackgroundColor']
+			# Calculate pixel color using Phong model
+			image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light, 4)
 			
 			# Update progress bar
 			pbar.update()
