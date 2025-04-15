@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-scene_fn = "scene_3.json"
+scene_fn = "scene_5.json"
 res = 256
 
 #### Scene Loader
@@ -112,6 +112,12 @@ def cast_ray(r_o, r_d, obj_list):
 
 	return t_min, closest_object
 
+def calc_refl(normal, vector):
+	r = 2 * np.dot(normal, vector) * normal - vector
+	r_hat = r / np.linalg.norm(r)
+
+	return r, r_hat
+
 # Define function to calculate Phong lighting
 def phong(r_o, r_d, t, obj, obj_list, light):
 	# Calculate intersection point in world space
@@ -121,6 +127,7 @@ def phong(r_o, r_d, t, obj, obj_list, light):
 	k_d = obj.getKd()
 	k_s = obj.getKs()
 	k_a = obj.getKa()
+	k_r = obj.getRefl()
 	
 	# Calculate normal based on object type
 	if isinstance(obj, Sphere):
@@ -135,8 +142,7 @@ def phong(r_o, r_d, t, obj, obj_list, light):
 	l_hat = l / np.linalg.norm(l)
 
 	# Calculate reflection vector
-	r = 2 * np.dot(n, l) * n - l
-	r_hat = r / np.linalg.norm(r)
+	r, r_hat = calc_refl(n, l)
 
 	# Calculate direction from point to ray origin
 	v = -r_d * t
@@ -157,15 +163,23 @@ def phong(r_o, r_d, t, obj, obj_list, light):
 	c_spec = (s * m_spec) * np.clip(np.dot(v_hat, r_hat), 0, None)**m_gls
 	c_amb = s_amb * m_amb
 
-	offset = [0.001, 0.001, 0.001]
+	offset = 0.001 * n_hat
 	shade_t, shade_obj = cast_ray(p + offset, light['DirectionToLight'], obj_list)
 
 	if shade_t != -1:
 		k_d = 0
 		k_s = 0
 
+	refl_v, refl_v_hat = calc_refl(n, -r_d)
+	refl_t, refl_obj = cast_ray(p + offset, refl_v_hat, obj_list)
+
+	if refl_t != -1:
+		c_refl = refl_obj.getDiffuse()
+	else:
+		c_refl = light['BackgroundColor']
+
 	# Calculate final color at point
-	c = k_d * c_diff + k_s * c_spec + k_a * c_amb
+	c = k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * c_refl
 
 	return c
 
