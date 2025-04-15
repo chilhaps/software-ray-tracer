@@ -114,6 +114,7 @@ def cast_ray(r_o, r_d, obj_list):
 
 	return t_min, closest_object
 
+# Define function to calculate reflection of given vector at normal
 def calc_refl(normal, vector):
 	r = 2 * np.dot(normal, vector) * normal - vector
 	r_hat = r / np.linalg.norm(r)
@@ -122,13 +123,16 @@ def calc_refl(normal, vector):
 
 # Define function to calculate Phong lighting
 def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
+	# Return 0 if bounce limit is reached
 	if current_bounce == max_bounces: return 0
+
+	# Return background color if t-value is -1
 	if t == -1: return light['BackgroundColor']
 
 	# Calculate intersection point in world space
 	p = r_o + r_d * t
 
-	# Get kd, ks, and ka from object
+	# Get kd, ks, ka, and k_r from object
 	k_d = obj.getKd()
 	k_s = obj.getKs()
 	k_a = obj.getKa()
@@ -147,7 +151,7 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	l_hat = l / np.linalg.norm(l)
 
 	# Calculate reflection vector
-	r, r_hat = calc_refl(n, l)
+	r_hat = calc_refl(n, l)[1]
 
 	# Calculate direction from point to ray origin
 	v = -r_d * t
@@ -168,20 +172,26 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	c_spec = (s * m_spec) * np.clip(np.dot(v_hat, r_hat), 0, None)**m_gls
 	c_amb = s_amb * m_amb
 
+	# Calculate offset value using normal value at point
 	offset = 0.001 * n_hat
-	shade_t, shade_obj = cast_ray(p + offset, light['DirectionToLight'], obj_list)
 
+	# Cast ray to light to determine whether or not point is in shadow
+	shade_t = cast_ray(p + offset, light['DirectionToLight'], obj_list)[0]
+
+	# Set diffusion, specular, and reflection coefficients to 0 if point is in shadow
 	if shade_t != -1:
 		k_d = 0
 		k_s = 0
 		k_r = 0
 
-	refl_v, refl_v_hat = calc_refl(n, -r_d)
+	# Calculate reflection vector at point and cast ray
+	refl_v_hat = calc_refl(n, -r_d)[1]
 	refl_t, refl_obj = cast_ray(p + offset, refl_v_hat, obj_list)
 
+	# Increment bounce count
 	current_bounce += 1
 
-	# Calculate final color at point
+	# Calculate final color at point, clip to 0..1
 	return np.clip(k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * phong(p + offset, refl_v_hat, refl_t, refl_obj, obj_list, light, max_bounces, current_bounce), 0, 1)
 
 ### Ray Tracer
