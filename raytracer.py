@@ -4,8 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-scene_fn = "scene_5.json"
-res = 1080
+MAX_BOUNCES = 4
+
+scene_fn = "scene_6.json"
+res = 256
 
 #### Scene Loader
 def loadScene(scene_fn):
@@ -172,6 +174,7 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	if shade_t != -1:
 		k_d = 0
 		k_s = 0
+		k_r = 0
 
 	refl_v, refl_v_hat = calc_refl(n, -r_d)
 	refl_t, refl_obj = cast_ray(p + offset, refl_v_hat, obj_list)
@@ -179,7 +182,7 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	current_bounce += 1
 
 	# Calculate final color at point
-	return k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * phong(p + offset, refl_v_hat, refl_t, refl_obj, obj_list, light, max_bounces, current_bounce)
+	return np.clip(k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * phong(p + offset, refl_v_hat, refl_t, refl_obj, obj_list, light, max_bounces, current_bounce), 0, 1)
 
 ### Ray Tracer
 camera, light, objects = loadScene(scene_fn)
@@ -211,7 +214,7 @@ with tqdm(total=len(ray_directions) * len(ray_directions[0])) as pbar:
 			t, obj = cast_ray(ray_origin, ray_directions[i][j], objects)
 
 			# Calculate pixel color using Phong model
-			image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light, 4)
+			image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light, MAX_BOUNCES)
 			
 			# Update progress bar
 			pbar.update()
