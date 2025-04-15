@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 MAX_BOUNCES = 4
 
-scene_fn = "scene_5.json"
+scene_fn = "scene_6.json"
 res = 256
 
 #### Scene Loader
