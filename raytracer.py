@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 MAX_BOUNCES = 4
 
-scene_fn = "scene_6.json"
+scene_fn = "scene_5.json"
 res = 256
 
 #### Scene Loader
@@ -178,11 +178,10 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	# Cast ray to light to determine whether or not point is in shadow
 	shade_t = cast_ray(p + offset, light['DirectionToLight'], obj_list)[0]
 
-	# Set diffusion, specular, and reflection coefficients to 0 if point is in shadow
+	# Set diffusion and specular coefficients to 0 if point is in shadow
 	if shade_t != -1:
 		k_d = 0
 		k_s = 0
-		k_r = 0
 
 	# Calculate reflection vector at point and cast ray
 	refl_v_hat = calc_refl(n, -r_d)[1]
