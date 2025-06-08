@@ -1,13 +1,24 @@
-import json
 from myshapes import Sphere, Triangle, Plane
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+import sys, os, json
 
 MAX_BOUNCES = 4
 
-scene_fn = "scene_6.json"
-res = 256
+cwd = os.getcwd()
+
+if not os.path.exists(os.path.join(cwd, sys.argv[1])):
+	print('"{}" not found.'.format(sys.argv[1]))
+	sys.exit()
+
+scene_fn = sys.argv[1]
+
+try:
+	res = int(sys.argv[2])
+except:
+	print('"{}" not a valid resolution.'.format(sys.argv[2]))
+	sys.exit()
 
 # Scene Loader (provided by instructor)
 def loadScene(scene_fn):
