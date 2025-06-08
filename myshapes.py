@@ -1,5 +1,6 @@
 import numpy as np
 
+#myshape class provided by instructor
 class myshape:
 
 	def __init__(self, diffuse, specular, gloss, refl, Kd, Ks, Ka):

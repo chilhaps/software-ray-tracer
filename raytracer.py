@@ -9,7 +9,7 @@ MAX_BOUNCES = 4
 scene_fn = "scene_6.json"
 res = 256
 
-#### Scene Loader
+# Scene Loader (provided by instructor)
 def loadScene(scene_fn):
 	with open(scene_fn) as f:
 		data = json.load(f)
@@ -56,7 +56,7 @@ def loadScene(scene_fn):
 
 	return camera, light, objects
 
-# Define function to handle Gram-Schmidt Orthogonalization
+# Compute Gram-Schmidt Orthogonalization
 def gso(p_at, p_from, v_up):
     e3 = (p_at - p_from) / np.linalg.norm(p_at - p_from)
     e1 = np.cross(e3, v_up) / np.linalg.norm(np.cross(e3, v_up))
@@ -64,12 +64,12 @@ def gso(p_at, p_from, v_up):
 
     return e1, e2, e3
 
-# Define function to calculate window points
+# Calculate window points
 def gen_window_points(res_h, res_w, fov_x, fov_y, p_at, p_from, e1, e2):
 	# Initilaize empty window
 	window = np.zeros((res_h, res_w, 3), dtype=np.float32)
 
-	# Calculate all necessary values
+	# Calculate all values
 	d = np.linalg.norm(p_at - p_from)
 	u_max = d * np.tan(fov_x / 2)
 	u_min = -u_max
@@ -81,25 +81,22 @@ def gen_window_points(res_h, res_w, fov_x, fov_y, p_at, p_from, e1, e2):
 	# Debug print statement
 	# print('d: {}, u_max: {}, u_min: {}, v_max: {}, v_min: {}, du: {}, dv: {}'.format(d, u_max, u_min, v_max, v_min, du, dv))
 
-	# Iterate through window array and calculate index and s-coordinate for each pixel
+	# Calculate index and s-coordinate for each pixel
 	for i in range(0, len(window)):
-		# Apply offset to i index, accounting for 0 being skipped
 		i2 = -i + res_h / 2
 		if i2 <= 0: i2 -= 1
 
 		for j in range(0, len(window[i])):
-			# Apply offset to j index, accounting for 0 being skipped
 			j2 = j - res_w / 2
 			if j2 >= 0: j2 += 1
 
-			# Calculate s-coordinate at pixel (i, j) using offset i and j values
+			# Calculate s-coordinate at pixel (i, j)
 			window[i][j] = p_at + du * (j2 + 0.5) * e1 + dv * (i2 + 0.5) * e2
 
 	return window
 
-# Define function to calculate intersections for ray
+# Calculate intersections for ray
 def cast_ray(r_o, r_d, obj_list):
-	# Initialize t_min and the closest object
 	t_min = -1
 	closest_object = obj_list[0]
 
@@ -107,7 +104,7 @@ def cast_ray(r_o, r_d, obj_list):
 	for object in obj_list:
 		t = object.intersect(r_o, r_d)
 
-		# If t-value is positive and less than current t_min, or if t-value is positive and t_min is not, set t_min to t-value and closest object to current object
+		# Update minimum t-value and closest object
 		if ((t > 0 and t < t_min) or (t_min <= 0 and t > 0)):
 			t_min = t
 			closest_object = object
@@ -121,18 +118,18 @@ def calc_refl(normal, vector):
 
 	return r, r_hat
 
-# Define function to calculate Phong lighting
+# Calculate Phong lighting
 def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
-	# Return 0 if bounce limit is reached
+	# Stop shading when bounce limit is reached
 	if current_bounce == max_bounces: return 0
 
-	# Return background color if t-value is -1
+	# Don't shade empty pixels
 	if t == -1: return light['BackgroundColor']
 
 	# Calculate intersection point in world space
 	p = r_o + r_d * t
 
-	# Get kd, ks, ka, and k_r from object
+	# Get object material attributes
 	k_d = obj.getKd()
 	k_s = obj.getKs()
 	k_a = obj.getKa()
@@ -193,13 +190,12 @@ def phong(r_o, r_d, t, obj, obj_list, light, max_bounces, current_bounce=0):
 	# Calculate final color at point, clip to 0..1
 	return np.clip(k_d * c_diff + k_s * c_spec + k_a * c_amb + k_r * phong(p + offset, refl_v_hat, refl_t, refl_obj, obj_list, light, max_bounces, current_bounce), 0, 1)
 
-### Ray Tracer
+# Initialize scene objects and window
 camera, light, objects = loadScene(scene_fn)
 image = np.zeros((res,res,3), dtype=np.float32)
 
 print('Calculating window coordinates...')
 
-# YOUR CODE HERE
 # Perform GSO and define window points in world space
 e1, e2, e3 = gso(camera['LookAt'], camera['LookFrom'], camera['Up'])
 window = gen_window_points(res, res, np.deg2rad(camera['FieldOfView']), np.deg2rad(camera['FieldOfView']), camera['LookAt'], camera['LookFrom'], e1, e2)
@@ -216,20 +212,15 @@ print('Rendering...')
 
 # Define progress bar
 with tqdm(total=len(ray_directions) * len(ray_directions[0])) as pbar:
-	# Iterate through calculated ray directions
+	# Cast each ray, perform phong shading at intersection points, update progress bar
 	for i in range(0, len(ray_directions)):
 		for j in range(0, len(ray_directions[i])):
-			# Cast ray for each ray direction
 			t, obj = cast_ray(ray_origin, ray_directions[i][j], objects)
-
-			# Calculate pixel color using Phong model
 			image[i][j] = phong(ray_origin, ray_directions[i][j], t, obj, objects, light, MAX_BOUNCES)
-			
-			# Update progress bar
 			pbar.update()
 
 print('Done!')
 
-### Save and Display Output
+# Save and Display Output
 plt.imsave("output.png", image)
 plt.imshow(image);plt.show()
